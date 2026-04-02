@@ -1,4 +1,4 @@
-import { IsEnum, IsInt, Min } from 'class-validator';
+import { IsEnum, IsInt, IsUUID, Min } from 'class-validator';
 
 export enum ResourceKey {
   CASH = 'cash',
@@ -10,6 +10,9 @@ export enum ResourceKey {
 }
 
 export class GrantResourceDto {
+  @IsUUID()
+  playerId!: string;
+
   @IsEnum(ResourceKey)
   resource!: ResourceKey;
 

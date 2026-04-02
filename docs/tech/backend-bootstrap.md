@@ -23,7 +23,7 @@
 - `GET /health`
 - `POST /auth/guest-login`
 - `GET /players/me` (Bearer token required)
-- `PATCH /players/grant-resource` (Bearer token required)
+- `PATCH /players/grant-resource` (Admin key required via `x-admin-key`)
 - `GET /missions/templates`
 - `POST /missions/start` (Bearer token required)
 - `POST /missions/:runId/claim` (Bearer token required)
@@ -34,5 +34,5 @@
 
 ## Next coding slice
 - Add mission completion worker and rewards payout queue.
-- Add PvP shield windows and daily steal cap tracking table.
-- Add admin-only guards and audit logs for resource grants.
+- Expand PvP shield windows with decay rules and anti-farm cooldown resets.
+- Add admin dashboard views for audit logs and player protection state.

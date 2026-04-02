@@ -32,6 +32,7 @@ model Player {
   missionRuns MissionRun[]
   raidsAsAtk  PvPRaidLog[] @relation("raidsAsAttacker")
   raidsAsDef  PvPRaidLog[] @relation("raidsAsDefender")
+  protection  PvPProtectionState?
 }
 
 model PlayerResource {
@@ -83,4 +84,22 @@ model PvPRaidLog {
 
   attacker Player @relation("raidsAsAttacker", fields: [attackerId], references: [id], onDelete: Cascade)
   defender Player @relation("raidsAsDefender", fields: [defenderId], references: [id], onDelete: Cascade)
+}
+
+model PvPProtectionState {
+  playerId           String   @id
+  shieldUntil        DateTime?
+  lastRaidedAt       DateTime?
+  raidsAgainstWindow Int      @default(0)
+  updatedAt          DateTime @updatedAt
+  player             Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+}
+
+model AdminAuditLog {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  actor     String
+  action    String
+  playerId  String
+  payload   Json?
 }

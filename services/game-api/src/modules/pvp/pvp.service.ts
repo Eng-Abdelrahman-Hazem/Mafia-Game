@@ -4,6 +4,7 @@ import { RaidDto } from './dto';
 import { RandomService } from '../../common/random.service';
 
 const MAX_DAILY_STEAL = 5000;
+const SHIELD_MINUTES_AFTER_LOSS = 20;
 
 @Injectable()
 export class PvpService {
@@ -24,6 +25,14 @@ export class PvpService {
 
     if (!attacker?.resources || !defender?.resources) {
       throw new BadRequestException('Invalid raid request');
+    }
+
+    const protection = await this.prisma.pvPProtectionState.findUnique({
+      where: { playerId: defender.id }
+    });
+
+    if (protection?.shieldUntil && protection.shieldUntil > new Date()) {
+      throw new BadRequestException('Target is shielded');
     }
 
     const powerDelta = attacker.powerRating - defender.powerRating;
@@ -56,6 +65,24 @@ export class PvpService {
           defenderPower: defender.powerRating
         }
       });
+
+      if (won) {
+        const shieldUntil = new Date(Date.now() + SHIELD_MINUTES_AFTER_LOSS * 60 * 1000);
+        await tx.pvPProtectionState.upsert({
+          where: { playerId: defender.id },
+          update: {
+            lastRaidedAt: new Date(),
+            raidsAgainstWindow: { increment: 1 },
+            shieldUntil
+          },
+          create: {
+            playerId: defender.id,
+            lastRaidedAt: new Date(),
+            raidsAgainstWindow: 1,
+            shieldUntil
+          }
+        });
+      }
     });
 
     return { won, stolenCash, winChance };

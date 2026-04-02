@@ -5,6 +5,7 @@ describe('PvpService', () => {
     player: { findUnique: jest.fn() },
     playerResource: { update: jest.fn() },
     pvPRaidLog: { create: jest.fn() },
+    pvPProtectionState: { findUnique: jest.fn(), upsert: jest.fn() },
     $transaction: jest.fn()
   } as any;
 
@@ -13,8 +14,13 @@ describe('PvpService', () => {
   beforeEach(() => {
     jest.resetAllMocks();
     prisma.$transaction.mockImplementation(async (fn: any) =>
-      fn({ playerResource: prisma.playerResource, pvPRaidLog: prisma.pvPRaidLog })
+      fn({
+        playerResource: prisma.playerResource,
+        pvPRaidLog: prisma.pvPRaidLog,
+        pvPProtectionState: prisma.pvPProtectionState
+      })
     );
+    prisma.pvPProtectionState.findUnique.mockResolvedValue(null);
   });
 
   it('awards stolen cash when raid succeeds', async () => {
@@ -31,6 +37,7 @@ describe('PvpService', () => {
     expect(result.stolenCash).toBe(900);
     expect(prisma.playerResource.update).toHaveBeenCalledTimes(2);
     expect(prisma.pvPRaidLog.create).toHaveBeenCalled();
+    expect(prisma.pvPProtectionState.upsert).toHaveBeenCalled();
   });
 
   it('does not transfer resources when raid fails', async () => {
@@ -47,5 +54,15 @@ describe('PvpService', () => {
     expect(result.stolenCash).toBe(0);
     expect(prisma.playerResource.update).not.toHaveBeenCalled();
     expect(prisma.pvPRaidLog.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects raid when defender is shielded', async () => {
+    const service = new PvpService(prisma, randomService as any);
+    prisma.player.findUnique
+      .mockResolvedValueOnce({ id: 'atk', powerRating: 100, resources: { cash: 100 } })
+      .mockResolvedValueOnce({ id: 'def', powerRating: 100, resources: { cash: 800 } });
+    prisma.pvPProtectionState.findUnique.mockResolvedValue({ shieldUntil: new Date(Date.now() + 60000) });
+
+    await expect(service.runRaid('atk', { defenderId: 'def' })).rejects.toThrow('Target is shielded');
   });
 });
