@@ -40,8 +40,17 @@ export class MissionService {
           startedAt: now,
           endsAt,
           status: 'RUNNING'
-        }
+        },
+        include: { missionTemplate: true }
       });
+    });
+
+    await this.prisma.missionPayoutJob.create({
+      data: {
+        missionRunId: run.id,
+        playerId,
+        dueAt: run.endsAt
+      }
     });
 
     return run;
@@ -78,6 +87,11 @@ export class MissionService {
           influence: { increment: run.missionTemplate.influenceReward },
           heat: { decrement: 1 }
         }
+      });
+
+      await tx.missionPayoutJob.updateMany({
+        where: { missionRunId: run.id, status: { in: ['PENDING', 'PROCESSING'] } },
+        data: { status: 'DONE', attempts: { increment: 1 } }
       });
 
       return { claimed: true, runId: run.id };

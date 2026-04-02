@@ -19,6 +19,13 @@ enum MissionStatus {
   FAILED
 }
 
+enum JobStatus {
+  PENDING
+  PROCESSING
+  DONE
+  FAILED
+}
+
 model Player {
   id          String       @id @default(uuid())
   createdAt   DateTime     @default(now())
@@ -70,6 +77,7 @@ model MissionRun {
 
   player            Player         @relation(fields: [playerId], references: [id], onDelete: Cascade)
   missionTemplate   MissionTemplate @relation(fields: [missionTemplateId], references: [id])
+  payoutJobs        MissionPayoutJob[]
 }
 
 model PvPRaidLog {
@@ -102,4 +110,21 @@ model AdminAuditLog {
   action    String
   playerId  String
   payload   Json?
+}
+
+model MissionPayoutJob {
+  id           String    @id @default(uuid())
+  missionRunId String
+  playerId     String
+  dueAt        DateTime
+  status       JobStatus @default(PENDING)
+  attempts     Int       @default(0)
+  lastError    String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  missionRun MissionRun @relation(fields: [missionRunId], references: [id], onDelete: Cascade)
+
+  @@index([status, dueAt])
+  @@index([playerId])
 }

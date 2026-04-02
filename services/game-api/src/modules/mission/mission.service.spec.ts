@@ -6,6 +6,7 @@ describe('MissionService', () => {
     player: { findUnique: jest.fn() },
     missionTemplate: { findUnique: jest.fn(), findMany: jest.fn() },
     missionRun: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
+    missionPayoutJob: { create: jest.fn(), updateMany: jest.fn() },
     playerResource: { update: jest.fn() },
     $transaction: jest.fn()
   } as any;
@@ -13,7 +14,11 @@ describe('MissionService', () => {
   beforeEach(() => {
     jest.resetAllMocks();
     prisma.$transaction.mockImplementation(async (fn: any) =>
-      fn({ playerResource: prisma.playerResource, missionRun: prisma.missionRun })
+      fn({
+        playerResource: prisma.playerResource,
+        missionRun: prisma.missionRun,
+        missionPayoutJob: prisma.missionPayoutJob
+      })
     );
   });
 

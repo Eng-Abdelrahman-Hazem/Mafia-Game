@@ -31,8 +31,9 @@
 - `POST /gameplay/crime/instant` (Bearer token required)
 - `GET /pvp/targets` (Bearer token required)
 - `POST /pvp/raid` (Bearer token required)
+- `POST /internal/worker/process-missions?limit=50` (Admin key required via `x-admin-key`)
 
 ## Next coding slice
-- Add mission completion worker and rewards payout queue.
+- Wire `process-missions` endpoint to scheduled cron/BullMQ recurring job.
 - Expand PvP shield windows with decay rules and anti-farm cooldown resets.
 - Add admin dashboard views for audit logs and player protection state.

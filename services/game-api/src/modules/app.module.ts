@@ -9,6 +9,7 @@ import { PlayerModule } from './player/player.module';
 import { MissionModule } from './mission/mission.module';
 import { PvpModule } from './pvp/pvp.module';
 import { GameplayModule } from './gameplay/gameplay.module';
+import { WorkerModule } from './worker/worker.module';
 
 @Module({
   imports: [
@@ -18,7 +19,8 @@ import { GameplayModule } from './gameplay/gameplay.module';
     PlayerModule,
     MissionModule,
     PvpModule,
-    GameplayModule
+    GameplayModule,
+    WorkerModule
   ],
   providers: [PrismaService, AuthTokenService, RandomService]
 })

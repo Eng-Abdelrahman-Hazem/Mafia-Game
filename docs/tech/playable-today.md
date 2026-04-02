@@ -51,3 +51,10 @@ curl -s -X POST http://localhost:3000/pvp/raid \
 ```
 
 This loop (login -> crime -> raid -> home refresh) is the first playable vertical behavior.
+
+## 6) Process finished mission payouts (worker simulation)
+When timed missions are due, trigger worker processing:
+```bash
+curl -s -X POST 'http://localhost:3000/internal/worker/process-missions?limit=50' \
+  -H 'x-admin-key: <ADMIN_API_KEY>'
+```
