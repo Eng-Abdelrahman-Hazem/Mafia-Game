@@ -341,3 +341,46 @@ mafia-original-game/
 **MVP simplification tip:**
 Start with `game-api` containing REST + WebSocket modules; split into separate services only when scale requires.
 
+---
+
+## 9) Founder Decision Lock (Applied)
+
+These decisions supersede default recommendations and are now the build contract for Phase 2.
+
+1. **PvP loss policy:** **A (Low-loss)**  
+   - Implement hard caps on raid steal values, fast shield recovery, and revenge bonuses to reduce churn from repeated losses.
+
+2. **Soft launch monetization posture:** **A (Conservative pricing)**  
+   - Optimize for retention quality and payer trust first; delay aggressive pricing tests until after D7 stabilization.
+
+3. **Live-ops scope for first 90 days:** **B (Heavy cadence)**  
+   - Run multiple concurrent event tracks from launch month, but execute them through templates to avoid content-team overload.
+
+4. **Auth at launch:** **A (Guest/device first + optional email bind)**  
+   - Preserve fast onboarding while supporting account recovery with encouraged email binding after tutorial completion.
+
+5. **Post-MVP team allocation:** **A (60% live-ops / 25% tuning / 15% tech stability)**  
+   - Maintain predictable live cadence while reserving explicit capacity for economy tuning and reliability.
+
+### Implementation Impact for Phase 2 (Updated)
+
+- **Backend priority changes**
+  - Add event-template system early (event definitions, schedule windows, reward tables, leaderboard links).
+  - Build low-loss PvP rules as configurable policy tables (steal caps, shield timers, revenge multipliers).
+  - Add dynamic pricing config for conservative monetization experiments (server-side offer parameters).
+
+- **Client priority changes**
+  - Build reusable event UI shell first (tabs/cards/progress/reward claim patterns) to support heavy cadence.
+  - Add clear PvP protection state indicators (shield active, recent-loss protection, revenge eligibility).
+  - Implement post-tutorial email binding nudge flow without hard gating gameplay.
+
+- **Admin/live-ops priority changes**
+  - Event authoring panel becomes MVP-critical (clone event templates, schedule overlap checks, reward sanity warnings).
+  - Pricing controls require activation windows and audience segmentation switches.
+
+### Phase 2 Exit Criteria (Locked)
+
+- Event template pipeline supports at least **4 simultaneous event types** with config-only variation.
+- PvP protection system verified with automated rule tests for edge cases (repeat attacker, multi-defense chain).
+- Offer/pricing configs deploy without client patch.
+- Guest-to-email account binding flow completed and tracked in analytics funnel.
