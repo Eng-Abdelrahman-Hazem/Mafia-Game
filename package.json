@@ -1,0 +1,13 @@
+{
+  "name": "mafia-original-game",
+  "private": true,
+  "workspaces": [
+    "services/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run -w services/game-api build",
+    "dev": "npm run -w services/game-api start:dev",
+    "test": "npm run -w services/game-api test"
+  }
+}
