@@ -1,0 +1,49 @@
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { PrismaService } from '../../common/prisma.service';
+import { StartMissionDto } from './dto';
+
+@Injectable()
+export class MissionService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async listTemplates() {
+    return this.prisma.missionTemplate.findMany({ where: { isActive: true } });
+  }
+
+  async startMission(input: StartMissionDto) {
+    const [player, template] = await Promise.all([
+      this.prisma.player.findUnique({ where: { id: input.playerId }, include: { resources: true } }),
+      this.prisma.missionTemplate.findUnique({ where: { id: input.missionTemplateId } })
+    ]);
+
+    if (!player || !player.resources || !template) {
+      throw new BadRequestException('Invalid mission request');
+    }
+
+    if (player.resources.energy < template.energyCost) {
+      throw new BadRequestException('Not enough energy');
+    }
+
+    const now = new Date();
+    const endsAt = new Date(now.getTime() + template.durationSec * 1000);
+
+    const run = await this.prisma.$transaction(async (tx) => {
+      await tx.playerResource.update({
+        where: { playerId: player.id },
+        data: { energy: { decrement: template.energyCost }, heat: { increment: 1 } }
+      });
+
+      return tx.missionRun.create({
+        data: {
+          playerId: player.id,
+          missionTemplateId: template.id,
+          startedAt: now,
+          endsAt,
+          status: 'RUNNING'
+        }
+      });
+    });
+
+    return run;
+  }
+}

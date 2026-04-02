@@ -1,0 +1,85 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Faction {
+  DOCK_SERPENTS
+  VELVET_CIRCUIT
+  IRON_VOW
+}
+
+enum MissionStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+model Player {
+  id          String       @id @default(uuid())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deviceId    String       @unique
+  handle      String       @unique
+  faction     Faction
+  powerRating Int          @default(100)
+  resources   PlayerResource?
+  missionRuns MissionRun[]
+  raidsAsAtk  PvPRaidLog[] @relation("raidsAsAttacker")
+  raidsAsDef  PvPRaidLog[] @relation("raidsAsDefender")
+}
+
+model PlayerResource {
+  playerId    String @id
+  cash        Int    @default(0)
+  gems        Int    @default(0)
+  energy      Int    @default(0)
+  influence   Int    @default(0)
+  contraband  Int    @default(0)
+  loyalty     Int    @default(100)
+  heat        Int    @default(0)
+  player      Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+}
+
+model MissionTemplate {
+  id              String       @id @default(uuid())
+  key             String       @unique
+  title            String
+  energyCost      Int
+  durationSec     Int
+  cashReward      Int
+  influenceReward Int
+  isActive        Boolean      @default(true)
+  runs            MissionRun[]
+}
+
+model MissionRun {
+  id                String        @id @default(uuid())
+  playerId          String
+  missionTemplateId String
+  status            MissionStatus
+  startedAt         DateTime
+  endsAt            DateTime
+  createdAt         DateTime      @default(now())
+
+  player            Player         @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  missionTemplate   MissionTemplate @relation(fields: [missionTemplateId], references: [id])
+}
+
+model PvPRaidLog {
+  id            String   @id @default(uuid())
+  createdAt     DateTime @default(now())
+  attackerId    String
+  defenderId    String
+  attackerPower Int
+  defenderPower Int
+  won           Boolean
+  stolenCash    Int
+
+  attacker Player @relation("raidsAsAttacker", fields: [attackerId], references: [id], onDelete: Cascade)
+  defender Player @relation("raidsAsDefender", fields: [defenderId], references: [id], onDelete: Cascade)
+}
