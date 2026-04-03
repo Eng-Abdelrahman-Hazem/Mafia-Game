@@ -58,3 +58,14 @@ When timed missions are due, trigger worker processing:
 curl -s -X POST 'http://localhost:3000/internal/worker/process-missions?limit=50' \
   -H 'x-admin-key: <ADMIN_API_KEY>'
 ```
+
+## 7) Visual action-sequence prototype (temporary graphics)
+```bash
+cd clients/prototype-web
+python3 -m http.server 8080
+```
+Open `http://localhost:8080` and use:
+- **Run Crime Sequence**
+- **Run Raid Sequence**
+
+This gives immediate feedback on sequence pacing and visual feel while Unity implementation is in progress.
