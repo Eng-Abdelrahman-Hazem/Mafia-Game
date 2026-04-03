@@ -1,6 +1,7 @@
 # Playable Today (API Loop)
 
 This gives a first playable semblance today using API endpoints.
+If you are non-technical, use `docs/tech/non-programmer-run.md` first.
 
 ## 1) Boot services
 ```bash
