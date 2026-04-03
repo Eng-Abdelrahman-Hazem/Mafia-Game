@@ -1,5 +1,13 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma.service';
+
+type RaidTargetRow = {
+  id: string;
+  handle: string;
+  powerRating: number;
+  resources: { cash: number } | null;
+};
 
 @Injectable()
 export class GameplayService {
@@ -31,7 +39,12 @@ export class GameplayService {
       },
       missions: templates,
       activeRuns,
-      raidTargets: targets.map((t) => ({ id: t.id, handle: t.handle, powerRating: t.powerRating, cash: t.resources?.cash ?? 0 }))
+      raidTargets: (targets as RaidTargetRow[]).map((t) => ({
+        id: t.id,
+        handle: t.handle,
+        powerRating: t.powerRating,
+        cash: t.resources?.cash ?? 0
+      }))
     };
   }
 
@@ -49,7 +62,7 @@ export class GameplayService {
       throw new BadRequestException('Not enough energy');
     }
 
-    await this.prisma.$transaction(async (tx) => {
+    await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.playerResource.update({
         where: { playerId },
         data: {

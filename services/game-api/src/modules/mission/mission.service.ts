@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma.service';
 import { StartMissionDto } from './dto';
 
@@ -27,7 +28,7 @@ export class MissionService {
     const now = new Date();
     const endsAt = new Date(now.getTime() + template.durationSec * 1000);
 
-    const run = await this.prisma.$transaction(async (tx) => {
+    const run = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.playerResource.update({
         where: { playerId: player.id },
         data: { energy: { decrement: template.energyCost }, heat: { increment: 1 } }
@@ -74,7 +75,7 @@ export class MissionService {
       throw new BadRequestException('Mission not complete yet');
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.missionRun.update({
         where: { id: run.id },
         data: { status: 'COMPLETED' }

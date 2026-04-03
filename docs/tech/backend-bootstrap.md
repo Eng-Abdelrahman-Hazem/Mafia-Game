@@ -18,6 +18,9 @@
    - `npm run start:dev`
 6. Seed playable content:
    - `npm run seed:playable`
+7. Build and test:
+   - `npm run build`
+   - `npm run test`
 
 ## Initial endpoints
 - `GET /health`

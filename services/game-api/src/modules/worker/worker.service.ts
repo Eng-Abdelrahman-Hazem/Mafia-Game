@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma.service';
 
 @Injectable()
@@ -21,7 +22,7 @@ export class WorkerService {
       processed += 1;
 
       try {
-        await this.prisma.$transaction(async (tx) => {
+        await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
           await tx.missionPayoutJob.update({
             where: { id: job.id },
             data: { status: 'PROCESSING', attempts: { increment: 1 } }

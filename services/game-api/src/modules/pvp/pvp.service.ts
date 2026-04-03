@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma.service';
 import { RaidDto } from './dto';
 import { RandomService } from '../../common/random.service';
@@ -42,7 +43,7 @@ export class PvpService {
     const potentialSteal = Math.min(defender.resources.cash, 1000);
     const stolenCash = won ? Math.min(potentialSteal, MAX_DAILY_STEAL) : 0;
 
-    await this.prisma.$transaction(async (tx) => {
+    await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       if (stolenCash > 0) {
         await tx.playerResource.update({
           where: { playerId: attacker.id },
