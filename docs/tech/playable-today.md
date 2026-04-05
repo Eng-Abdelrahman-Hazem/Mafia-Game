@@ -93,3 +93,4 @@ curl -s -X POST http://localhost:3000/events/<eventId>/claim \
 ```
 
 Note: mission completion/instant crime and successful raids now auto-award event points in active events.
+Event scoring endpoint now enforces per-minute request limits and daily point caps to reduce abuse.

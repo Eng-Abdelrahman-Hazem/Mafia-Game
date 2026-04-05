@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { randomUUID } from 'crypto';
 import { PrismaService } from '../../common/prisma.service';
 import { AddEventScoreDto } from './dto';
 import { ACTION_POINTS } from '../../common/live-event-score.service';
@@ -10,6 +11,9 @@ type RewardTier = {
   influence?: number;
   gems?: number;
 };
+
+const MAX_SCORE_REQUESTS_PER_MINUTE = 30;
+const MAX_EVENT_POINTS_PER_DAY = 2000;
 
 @Injectable()
 export class EventsService {
@@ -69,33 +73,7 @@ export class EventsService {
 
     const quantity = input.quantity ?? 1;
     const delta = basePoints * quantity;
-    const idempotencyKey = input.idempotencyKey?.trim();
-
-    if (!idempotencyKey) {
-      const score = await this.prisma.playerEventScore.upsert({
-        where: {
-          liveEventId_playerId: {
-            liveEventId: eventId,
-            playerId
-          }
-        },
-        update: {
-          points: { increment: delta }
-        },
-        create: {
-          liveEventId: eventId,
-          playerId,
-          points: delta
-        }
-      });
-
-      return {
-        eventId,
-        delta,
-        points: score.points,
-        replayed: false
-      };
-    }
+    const idempotencyKey = input.idempotencyKey?.trim() || `auto-${randomUUID()}`;
 
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const existingAction = await tx.eventScoreActionLog.findUnique({
@@ -125,6 +103,8 @@ export class EventsService {
           replayed: true
         };
       }
+
+      await this.assertScoringGuardrails(tx, playerId, eventId, delta);
 
       const score = await tx.playerEventScore.upsert({
         where: {
@@ -248,5 +228,40 @@ export class EventsService {
 
   private selectTier(points: number, tiers: RewardTier[]) {
     return tiers.find((tier) => points >= tier.minPoints);
+  }
+
+  private async assertScoringGuardrails(
+    tx: Prisma.TransactionClient,
+    playerId: string,
+    liveEventId: string,
+    incomingPoints: number
+  ) {
+    const minuteAgo = new Date(Date.now() - 60 * 1000);
+    const lastMinuteCount = await tx.eventScoreActionLog.count({
+      where: {
+        playerId,
+        liveEventId,
+        createdAt: { gte: minuteAgo }
+      }
+    });
+
+    if (lastMinuteCount >= MAX_SCORE_REQUESTS_PER_MINUTE) {
+      throw new BadRequestException('Score rate limit exceeded');
+    }
+
+    const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const dailyPoints = await tx.eventScoreActionLog.aggregate({
+      where: {
+        playerId,
+        liveEventId,
+        createdAt: { gte: dayAgo }
+      },
+      _sum: { appliedPoints: true }
+    });
+
+    const totalWithIncoming = (dailyPoints._sum.appliedPoints ?? 0) + incomingPoints;
+    if (totalWithIncoming > MAX_EVENT_POINTS_PER_DAY) {
+      throw new BadRequestException('Daily event point cap reached');
+    }
   }
 }

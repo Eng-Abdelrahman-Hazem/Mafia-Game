@@ -5,13 +5,15 @@ describe('EventsService', () => {
   const prisma = {
     liveEvent: { findMany: jest.fn(), findUnique: jest.fn() },
     playerEventScore: { upsert: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
-    eventScoreActionLog: { findUnique: jest.fn(), create: jest.fn() },
+    eventScoreActionLog: { findUnique: jest.fn(), create: jest.fn(), count: jest.fn(), aggregate: jest.fn() },
     playerResource: { update: jest.fn() },
     $transaction: jest.fn()
   } as any;
 
   beforeEach(() => {
     jest.resetAllMocks();
+    prisma.eventScoreActionLog.count.mockResolvedValue(0);
+    prisma.eventScoreActionLog.aggregate.mockResolvedValue({ _sum: { appliedPoints: 0 } });
     prisma.$transaction.mockImplementation(async (fn: any) =>
       fn({
         playerEventScore: prisma.playerEventScore,
@@ -35,6 +37,8 @@ describe('EventsService', () => {
 
     expect(result.delta).toBe(20);
     expect(result.points).toBe(20);
+    expect(result.replayed).toBe(false);
+    expect(prisma.eventScoreActionLog.create).toHaveBeenCalled();
   });
 
   it('treats repeated idempotency key as replay without duplicate points', async () => {
@@ -84,5 +88,35 @@ describe('EventsService', () => {
     });
 
     await expect(service.claimEventReward('p1', 'e1')).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('rejects event scoring when rate limit is exceeded', async () => {
+    const service = new EventsService(prisma);
+    prisma.liveEvent.findUnique.mockResolvedValue({
+      id: 'e1',
+      startsAt: new Date(Date.now() - 1000),
+      endsAt: new Date(Date.now() + 3600_000),
+      template: { isActive: true }
+    });
+    prisma.eventScoreActionLog.count.mockResolvedValue(30);
+
+    await expect(
+      service.addScore('p1', 'e1', { actionType: 'crime_complete', quantity: 1, idempotencyKey: 'new-req' })
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('rejects event scoring when daily points cap is exceeded', async () => {
+    const service = new EventsService(prisma);
+    prisma.liveEvent.findUnique.mockResolvedValue({
+      id: 'e1',
+      startsAt: new Date(Date.now() - 1000),
+      endsAt: new Date(Date.now() + 3600_000),
+      template: { isActive: true }
+    });
+    prisma.eventScoreActionLog.aggregate.mockResolvedValue({ _sum: { appliedPoints: 1995 } });
+
+    await expect(
+      service.addScore('p1', 'e1', { actionType: 'crime_complete', quantity: 1, idempotencyKey: 'new-req' })
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 });
