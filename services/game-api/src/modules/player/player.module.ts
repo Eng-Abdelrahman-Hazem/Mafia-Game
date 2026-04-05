@@ -10,5 +10,9 @@ import { AdminAuditService } from '../admin/admin-audit.service';
 @Module({
   controllers: [PlayerController],
   providers: [PlayerService, PrismaService, AuthTokenService, PlayerAuthGuard, AdminGuard, AdminAuditService]
+
+@Module({
+  controllers: [PlayerController],
+  providers: [PlayerService, PrismaService]
 })
 export class PlayerModule {}

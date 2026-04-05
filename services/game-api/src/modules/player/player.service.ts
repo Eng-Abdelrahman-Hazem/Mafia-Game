@@ -10,6 +10,10 @@ export class PlayerService {
     private readonly adminAuditService: AdminAuditService
   ) {}
 
+@Injectable()
+export class PlayerService {
+  constructor(private readonly prisma: PrismaService) {}
+
   async getProfile(playerId: string) {
     const player = await this.prisma.player.findUnique({
       where: { id: playerId },
@@ -25,6 +29,8 @@ export class PlayerService {
 
   async grantResource(playerId: string, input: GrantResourceDto) {
     const profile = await this.getProfile(playerId);
+  async grantResource(input: GrantResourceDto) {
+    const profile = await this.getProfile(input.playerId);
     const current = profile.resources;
 
     if (!current) {
@@ -39,6 +45,10 @@ export class PlayerService {
     await this.adminAuditService.record('admin-api', 'grant-resource', playerId, {
       resource: input.resource,
       amount: input.amount
+    });
+
+      where: { playerId: input.playerId },
+      data: { [input.resource]: current[input.resource] + input.amount }
     });
 
     return updated;

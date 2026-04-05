@@ -8,5 +8,9 @@ import { PlayerAuthGuard } from '../../common/player-auth.guard';
 @Module({
   controllers: [AuthController],
   providers: [AuthService, PrismaService, AuthTokenService, PlayerAuthGuard]
+
+@Module({
+  controllers: [AuthController],
+  providers: [AuthService, PrismaService]
 })
 export class AuthModule {}

@@ -4,6 +4,9 @@ import { GrantResourceDto } from './dto';
 import { PlayerAuthGuard } from '../../common/player-auth.guard';
 import { CurrentPlayerId } from '../../common/current-player.decorator';
 import { AdminGuard } from '../../common/admin/admin.guard';
+import { Body, Controller, Get, Param, Patch } from '@nestjs/common';
+import { PlayerService } from './player.service';
+import { GrantResourceDto } from './dto';
 
 @Controller('players')
 export class PlayerController {
@@ -19,5 +22,13 @@ export class PlayerController {
   @UseGuards(AdminGuard)
   async grantResource(@Body() input: GrantResourceDto) {
     return this.playerService.grantResource(input.playerId, input);
+  @Get(':id')
+  async getPlayer(@Param('id') id: string) {
+    return this.playerService.getProfile(id);
+  }
+
+  @Patch('grant-resource')
+  async grantResource(@Body() input: GrantResourceDto) {
+    return this.playerService.grantResource(input);
   }
 }

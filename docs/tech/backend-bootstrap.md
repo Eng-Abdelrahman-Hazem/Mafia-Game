@@ -46,3 +46,14 @@
 - Add admin dashboard controls for event scheduling and reward tuning.
 - Add offer/pricing config endpoints for no-client-patch monetization tests.
 - Add analytics dashboard query endpoints for retention/churn and email-bind conversion.
+- `GET /players/:id`
+- `PATCH /players/grant-resource`
+- `GET /missions/templates`
+- `POST /missions/start`
+- `POST /pvp/raid`
+
+## Next coding slice
+- Add JWT/session issuance for guest login.
+- Add mission completion worker and rewards payout queue.
+- Add PvP shield windows and daily steal cap tracking table.
+- Add admin-only guards and audit logs for resource grants.

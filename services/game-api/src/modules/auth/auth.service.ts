@@ -10,6 +10,13 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly authTokenService: AuthTokenService
   ) {}
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../common/prisma.service';
+import { GuestLoginDto } from './dto';
+
+@Injectable()
+export class AuthService {
+  constructor(private readonly prisma: PrismaService) {}
 
   async guestLogin(input: GuestLoginDto) {
     const existing = await this.prisma.player.findUnique({
@@ -23,6 +30,7 @@ export class AuthService {
         isNew: false,
         accessToken: this.authTokenService.issueToken(existing.id)
       };
+      return { player: existing, isNew: false };
     }
 
     const player = await this.prisma.player.create({
@@ -90,5 +98,6 @@ export class AuthService {
       bound: true,
       player: updated
     };
+    return { player, isNew: true };
   }
 }

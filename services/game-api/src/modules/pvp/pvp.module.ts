@@ -10,5 +10,9 @@ import { LiveEventScoreService } from '../../common/live-event-score.service';
 @Module({
   controllers: [PvpController],
   providers: [PvpService, PrismaService, RandomService, AuthTokenService, PlayerAuthGuard, LiveEventScoreService]
+
+@Module({
+  controllers: [PvpController],
+  providers: [PvpService, PrismaService]
 })
 export class PvpModule {}

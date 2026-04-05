@@ -10,6 +10,12 @@ export class MissionService {
     private readonly prisma: PrismaService,
     private readonly liveEventScoreService: LiveEventScoreService
   ) {}
+import { PrismaService } from '../../common/prisma.service';
+import { StartMissionDto } from './dto';
+
+@Injectable()
+export class MissionService {
+  constructor(private readonly prisma: PrismaService) {}
 
   async listTemplates() {
     return this.prisma.missionTemplate.findMany({ where: { isActive: true } });
@@ -18,6 +24,9 @@ export class MissionService {
   async startMission(playerId: string, input: StartMissionDto) {
     const [player, template] = await Promise.all([
       this.prisma.player.findUnique({ where: { id: playerId }, include: { resources: true } }),
+  async startMission(input: StartMissionDto) {
+    const [player, template] = await Promise.all([
+      this.prisma.player.findUnique({ where: { id: input.playerId }, include: { resources: true } }),
       this.prisma.missionTemplate.findUnique({ where: { id: input.missionTemplateId } })
     ]);
 
@@ -33,6 +42,7 @@ export class MissionService {
     const endsAt = new Date(now.getTime() + template.durationSec * 1000);
 
     const run = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const run = await this.prisma.$transaction(async (tx) => {
       await tx.playerResource.update({
         where: { playerId: player.id },
         data: { energy: { decrement: template.energyCost }, heat: { increment: 1 } }
@@ -104,5 +114,10 @@ export class MissionService {
 
     await this.liveEventScoreService.safeAwardActionPoints(playerId, 'crime_complete');
     return claimResult;
+        }
+      });
+    });
+
+    return run;
   }
 }

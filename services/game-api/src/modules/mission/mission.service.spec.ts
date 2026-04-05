@@ -50,5 +50,8 @@ describe('MissionService', () => {
     expect(prisma.missionRun.update).toHaveBeenCalled();
     expect(prisma.playerResource.update).toHaveBeenCalled();
     expect(liveEventScoreService.safeAwardActionPoints).toHaveBeenCalledWith('p1', 'crime_complete');
+describe('MissionService', () => {
+  it('should add tests for energy validation and mission creation', () => {
+    expect(true).toBe(true);
   });
 });

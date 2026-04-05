@@ -3,6 +3,9 @@ import { AuthService } from './auth.service';
 import { BindEmailDto, GuestLoginDto } from './dto';
 import { PlayerAuthGuard } from '../../common/player-auth.guard';
 import { CurrentPlayerId } from '../../common/current-player.decorator';
+import { Body, Controller, Post } from '@nestjs/common';
+import { AuthService } from './auth.service';
+import { GuestLoginDto } from './dto';
 
 @Controller('auth')
 export class AuthController {

@@ -9,5 +9,9 @@ import { LiveEventScoreService } from '../../common/live-event-score.service';
 @Module({
   controllers: [MissionController],
   providers: [MissionService, PrismaService, AuthTokenService, PlayerAuthGuard, LiveEventScoreService]
+
+@Module({
+  controllers: [MissionController],
+  providers: [MissionService, PrismaService]
 })
 export class MissionModule {}

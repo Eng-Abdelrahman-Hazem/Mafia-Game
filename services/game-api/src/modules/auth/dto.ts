@@ -1,4 +1,5 @@
 import { IsEmail, IsOptional, IsString, Length, Matches } from 'class-validator';
+import { IsOptional, IsString, Length, Matches } from 'class-validator';
 
 export class GuestLoginDto {
   @IsString()

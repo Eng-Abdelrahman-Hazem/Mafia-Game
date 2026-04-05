@@ -6,6 +6,11 @@ import { CurrentPlayerId } from '../../common/current-player.decorator';
 
 @Controller('missions')
 @UseGuards(PlayerAuthGuard)
+import { Body, Controller, Get, Post } from '@nestjs/common';
+import { MissionService } from './mission.service';
+import { StartMissionDto } from './dto';
+
+@Controller('missions')
 export class MissionController {
   constructor(private readonly missionService: MissionService) {}
 
@@ -22,5 +27,7 @@ export class MissionController {
   @Post(':runId/claim')
   async claim(@CurrentPlayerId() playerId: string, @Param('runId') runId: string) {
     return this.missionService.claimMission(playerId, runId);
+  async start(@Body() input: StartMissionDto) {
+    return this.missionService.startMission(input);
   }
 }

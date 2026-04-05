@@ -18,11 +18,23 @@ export class PvpService {
 
   async runRaid(attackerId: string, input: RaidDto) {
     if (attackerId === input.defenderId) {
+import { PrismaService } from '../../common/prisma.service';
+import { RaidDto } from './dto';
+
+const MAX_DAILY_STEAL = 5000;
+
+@Injectable()
+export class PvpService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async runRaid(input: RaidDto) {
+    if (input.attackerId === input.defenderId) {
       throw new BadRequestException('Cannot raid self');
     }
 
     const [attacker, defender] = await Promise.all([
       this.prisma.player.findUnique({ where: { id: attackerId }, include: { resources: true } }),
+      this.prisma.player.findUnique({ where: { id: input.attackerId }, include: { resources: true } }),
       this.prisma.player.findUnique({ where: { id: input.defenderId }, include: { resources: true } })
     ]);
 
@@ -41,11 +53,15 @@ export class PvpService {
     const powerDelta = attacker.powerRating - defender.powerRating;
     const winChance = Math.max(0.15, Math.min(0.85, 0.5 + powerDelta / 4000));
     const won = this.randomService.next() <= winChance;
+    const powerDelta = attacker.powerRating - defender.powerRating;
+    const winChance = Math.max(0.15, Math.min(0.85, 0.5 + powerDelta / 4000));
+    const won = Math.random() <= winChance;
 
     const potentialSteal = Math.min(defender.resources.cash, 1000);
     const stolenCash = won ? Math.min(potentialSteal, MAX_DAILY_STEAL) : 0;
 
     await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    await this.prisma.$transaction(async (tx) => {
       if (stolenCash > 0) {
         await tx.playerResource.update({
           where: { playerId: attacker.id },
@@ -105,5 +121,9 @@ export class PvpService {
       take: 10,
       orderBy: { powerRating: 'asc' }
     });
+  }
+    });
+
+    return { won, stolenCash, winChance };
   }
 }

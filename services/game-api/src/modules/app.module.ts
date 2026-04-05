@@ -25,5 +25,8 @@ import { EventsModule } from './events/events.module';
     EventsModule
   ],
   providers: [PrismaService, AuthTokenService, RandomService]
+    PvpModule
+  ],
+  providers: [PrismaService]
 })
 export class AppModule {}

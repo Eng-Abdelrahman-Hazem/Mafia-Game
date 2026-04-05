@@ -44,6 +44,8 @@ model Player {
   faction     Faction
   powerRating Int          @default(100)
   isBot       Boolean      @default(false)
+  faction     Faction
+  powerRating Int          @default(100)
   resources   PlayerResource?
   missionRuns MissionRun[]
   raidsAsAtk  PvPRaidLog[] @relation("raidsAsAttacker")
