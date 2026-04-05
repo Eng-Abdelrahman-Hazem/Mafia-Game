@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma.service';
+import { LiveEventScoreService } from '../../common/live-event-score.service';
 
 @Injectable()
 export class WorkerService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly liveEventScoreService: LiveEventScoreService
+  ) {}
 
   async processMissionPayouts(limit = 50) {
     const now = new Date();
@@ -61,6 +65,7 @@ export class WorkerService {
           });
         });
 
+        await this.liveEventScoreService.safeAwardActionPoints(job.playerId, 'crime_complete');
         completed += 1;
       } catch (error) {
         await this.prisma.missionPayoutJob.update({

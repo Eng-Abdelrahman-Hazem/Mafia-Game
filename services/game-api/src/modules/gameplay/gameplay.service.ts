@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma.service';
+import { LiveEventScoreService } from '../../common/live-event-score.service';
 
 type RaidTargetRow = {
   id: string;
@@ -11,7 +12,10 @@ type RaidTargetRow = {
 
 @Injectable()
 export class GameplayService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly liveEventScoreService: LiveEventScoreService
+  ) {}
 
   async getHome(playerId: string) {
     const [profile, templates, activeRuns, targets] = await Promise.all([
@@ -73,6 +77,8 @@ export class GameplayService {
         }
       });
     });
+
+    await this.liveEventScoreService.safeAwardActionPoints(playerId, 'crime_complete');
 
     return {
       success: true,

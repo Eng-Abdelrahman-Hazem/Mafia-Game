@@ -40,6 +40,6 @@
 - `POST /internal/worker/process-missions?limit=50` (Admin key required via `x-admin-key`)
 
 ## Next coding slice
-- Wire live-event scoring from mission and PvP services automatically.
+- Add event score idempotency guards for repeated client retries on score endpoint.
 - Add event leaderboard snapshots and anti-cheat throttles for score endpoints.
 - Add admin dashboard controls for event scheduling and reward tuning.

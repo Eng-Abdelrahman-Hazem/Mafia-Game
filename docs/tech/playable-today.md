@@ -91,3 +91,5 @@ Claim event reward:
 curl -s -X POST http://localhost:3000/events/<eventId>/claim \
   -H "Authorization: Bearer <accessToken>"
 ```
+
+Note: mission completion/instant crime and successful raids now auto-award event points in active events.

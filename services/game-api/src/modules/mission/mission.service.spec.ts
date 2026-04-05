@@ -10,9 +10,11 @@ describe('MissionService', () => {
     playerResource: { update: jest.fn() },
     $transaction: jest.fn()
   } as any;
+  const liveEventScoreService = { safeAwardActionPoints: jest.fn() } as any;
 
   beforeEach(() => {
     jest.resetAllMocks();
+    liveEventScoreService.safeAwardActionPoints.mockResolvedValue({ updatedEvents: 0, awardedPoints: 0 });
     prisma.$transaction.mockImplementation(async (fn: any) =>
       fn({
         playerResource: prisma.playerResource,
@@ -23,7 +25,7 @@ describe('MissionService', () => {
   });
 
   it('rejects mission start when energy is insufficient', async () => {
-    const service = new MissionService(prisma);
+    const service = new MissionService(prisma, liveEventScoreService);
 
     prisma.player.findUnique.mockResolvedValue({ id: 'p1', resources: { energy: 2 } });
     prisma.missionTemplate.findUnique.mockResolvedValue({ id: 'm1', energyCost: 5, durationSec: 10 });
@@ -32,7 +34,7 @@ describe('MissionService', () => {
   });
 
   it('claims completed mission and grants rewards', async () => {
-    const service = new MissionService(prisma);
+    const service = new MissionService(prisma, liveEventScoreService);
 
     prisma.missionRun.findUnique.mockResolvedValue({
       id: 'run1',
@@ -47,5 +49,6 @@ describe('MissionService', () => {
     expect(result.claimed).toBe(true);
     expect(prisma.missionRun.update).toHaveBeenCalled();
     expect(prisma.playerResource.update).toHaveBeenCalled();
+    expect(liveEventScoreService.safeAwardActionPoints).toHaveBeenCalledWith('p1', 'crime_complete');
   });
 });

@@ -2,19 +2,13 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma.service';
 import { AddEventScoreDto } from './dto';
+import { ACTION_POINTS } from '../../common/live-event-score.service';
 
 type RewardTier = {
   minPoints: number;
   cash?: number;
   influence?: number;
   gems?: number;
-};
-
-const ACTION_POINTS: Record<string, number> = {
-  crime_complete: 10,
-  raid_win: 18,
-  daily_login: 5,
-  syndicate_donation: 12
 };
 
 @Injectable()
@@ -39,7 +33,7 @@ export class EventsService {
       orderBy: { endsAt: 'asc' }
     });
 
-    return events.map((event) => {
+    return events.map((event: { id: string; endsAt: Date; template: { key: string; title: string; type: string }; playerScores: Array<{ points: number; claimedAt: Date | null }> }) => {
       const score = event.playerScores[0];
       return {
         id: event.id,
@@ -167,7 +161,7 @@ export class EventsService {
     });
   }
 
-  private parseRewards(rawRewards: Prisma.JsonValue): RewardTier[] {
+  private parseRewards(rawRewards: unknown): RewardTier[] {
     if (!Array.isArray(rawRewards)) {
       throw new BadRequestException('Invalid reward configuration');
     }

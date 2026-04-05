@@ -7,9 +7,11 @@ describe('WorkerService', () => {
     playerResource: { update: jest.fn() },
     $transaction: jest.fn()
   } as any;
+  const liveEventScoreService = { safeAwardActionPoints: jest.fn() } as any;
 
   beforeEach(() => {
     jest.resetAllMocks();
+    liveEventScoreService.safeAwardActionPoints.mockResolvedValue({ updatedEvents: 0, awardedPoints: 0 });
     prisma.$transaction.mockImplementation(async (fn: any) =>
       fn({
         missionPayoutJob: prisma.missionPayoutJob,
@@ -20,7 +22,7 @@ describe('WorkerService', () => {
   });
 
   it('processes due pending jobs', async () => {
-    const service = new WorkerService(prisma);
+    const service = new WorkerService(prisma, liveEventScoreService);
 
     prisma.missionPayoutJob.findMany.mockResolvedValue([
       {
@@ -40,5 +42,6 @@ describe('WorkerService', () => {
     expect(result.processed).toBe(1);
     expect(result.completed).toBe(1);
     expect(prisma.playerResource.update).toHaveBeenCalled();
+    expect(liveEventScoreService.safeAwardActionPoints).toHaveBeenCalledWith('p1', 'crime_complete');
   });
 });

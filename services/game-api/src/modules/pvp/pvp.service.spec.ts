@@ -10,9 +10,11 @@ describe('PvpService', () => {
   } as any;
 
   const randomService = { next: jest.fn() };
+  const liveEventScoreService = { safeAwardActionPoints: jest.fn() } as any;
 
   beforeEach(() => {
     jest.resetAllMocks();
+    liveEventScoreService.safeAwardActionPoints.mockResolvedValue({ updatedEvents: 0, awardedPoints: 0 });
     prisma.$transaction.mockImplementation(async (fn: any) =>
       fn({
         playerResource: prisma.playerResource,
@@ -24,7 +26,7 @@ describe('PvpService', () => {
   });
 
   it('awards stolen cash when raid succeeds', async () => {
-    const service = new PvpService(prisma, randomService as any);
+    const service = new PvpService(prisma, randomService as any, liveEventScoreService);
 
     prisma.player.findUnique
       .mockResolvedValueOnce({ id: 'atk', powerRating: 120, resources: { cash: 500 } })
@@ -38,10 +40,11 @@ describe('PvpService', () => {
     expect(prisma.playerResource.update).toHaveBeenCalledTimes(2);
     expect(prisma.pvPRaidLog.create).toHaveBeenCalled();
     expect(prisma.pvPProtectionState.upsert).toHaveBeenCalled();
+    expect(liveEventScoreService.safeAwardActionPoints).toHaveBeenCalledWith('atk', 'raid_win');
   });
 
   it('does not transfer resources when raid fails', async () => {
-    const service = new PvpService(prisma, randomService as any);
+    const service = new PvpService(prisma, randomService as any, liveEventScoreService);
 
     prisma.player.findUnique
       .mockResolvedValueOnce({ id: 'atk', powerRating: 100, resources: { cash: 100 } })
@@ -54,10 +57,11 @@ describe('PvpService', () => {
     expect(result.stolenCash).toBe(0);
     expect(prisma.playerResource.update).not.toHaveBeenCalled();
     expect(prisma.pvPRaidLog.create).toHaveBeenCalledTimes(1);
+    expect(liveEventScoreService.safeAwardActionPoints).not.toHaveBeenCalled();
   });
 
   it('rejects raid when defender is shielded', async () => {
-    const service = new PvpService(prisma, randomService as any);
+    const service = new PvpService(prisma, randomService as any, liveEventScoreService);
     prisma.player.findUnique
       .mockResolvedValueOnce({ id: 'atk', powerRating: 100, resources: { cash: 100 } })
       .mockResolvedValueOnce({ id: 'def', powerRating: 100, resources: { cash: 800 } });

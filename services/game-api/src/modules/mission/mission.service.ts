@@ -2,10 +2,14 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma.service';
 import { StartMissionDto } from './dto';
+import { LiveEventScoreService } from '../../common/live-event-score.service';
 
 @Injectable()
 export class MissionService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly liveEventScoreService: LiveEventScoreService
+  ) {}
 
   async listTemplates() {
     return this.prisma.missionTemplate.findMany({ where: { isActive: true } });
@@ -75,7 +79,7 @@ export class MissionService {
       throw new BadRequestException('Mission not complete yet');
     }
 
-    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const claimResult = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.missionRun.update({
         where: { id: run.id },
         data: { status: 'COMPLETED' }
@@ -97,5 +101,8 @@ export class MissionService {
 
       return { claimed: true, runId: run.id };
     });
+
+    await this.liveEventScoreService.safeAwardActionPoints(playerId, 'crime_complete');
+    return claimResult;
   }
 }

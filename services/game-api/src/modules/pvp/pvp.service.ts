@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma.service';
 import { RaidDto } from './dto';
 import { RandomService } from '../../common/random.service';
+import { LiveEventScoreService } from '../../common/live-event-score.service';
 
 const MAX_DAILY_STEAL = 5000;
 const SHIELD_MINUTES_AFTER_LOSS = 20;
@@ -11,7 +12,8 @@ const SHIELD_MINUTES_AFTER_LOSS = 20;
 export class PvpService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly randomService: RandomService
+    private readonly randomService: RandomService,
+    private readonly liveEventScoreService: LiveEventScoreService
   ) {}
 
   async runRaid(attackerId: string, input: RaidDto) {
@@ -85,6 +87,10 @@ export class PvpService {
         });
       }
     });
+
+    if (won) {
+      await this.liveEventScoreService.safeAwardActionPoints(attackerId, 'raid_win');
+    }
 
     return { won, stolenCash, winChance };
   }
