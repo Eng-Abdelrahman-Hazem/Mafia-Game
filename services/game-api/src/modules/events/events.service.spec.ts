@@ -5,6 +5,7 @@ describe('EventsService', () => {
   const prisma = {
     liveEvent: { findMany: jest.fn(), findUnique: jest.fn() },
     playerEventScore: { upsert: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
+    eventScoreActionLog: { findUnique: jest.fn(), create: jest.fn() },
     playerResource: { update: jest.fn() },
     $transaction: jest.fn()
   } as any;
@@ -14,6 +15,7 @@ describe('EventsService', () => {
     prisma.$transaction.mockImplementation(async (fn: any) =>
       fn({
         playerEventScore: prisma.playerEventScore,
+        eventScoreActionLog: prisma.eventScoreActionLog,
         playerResource: prisma.playerResource
       })
     );
@@ -33,6 +35,35 @@ describe('EventsService', () => {
 
     expect(result.delta).toBe(20);
     expect(result.points).toBe(20);
+  });
+
+  it('treats repeated idempotency key as replay without duplicate points', async () => {
+    const service = new EventsService(prisma);
+    prisma.liveEvent.findUnique.mockResolvedValue({
+      id: 'e1',
+      startsAt: new Date(Date.now() - 1000),
+      endsAt: new Date(Date.now() + 3600_000),
+      template: { isActive: true }
+    });
+    prisma.eventScoreActionLog.findUnique.mockResolvedValue({
+      id: 'log-1',
+      liveEventId: 'e1',
+      playerId: 'p1',
+      idempotencyKey: 'req-123'
+    });
+    prisma.playerEventScore.findUnique.mockResolvedValue({ points: 42 });
+
+    const result = await service.addScore('p1', 'e1', {
+      actionType: 'crime_complete',
+      quantity: 2,
+      idempotencyKey: 'req-123'
+    });
+
+    expect(result.replayed).toBe(true);
+    expect(result.delta).toBe(0);
+    expect(result.points).toBe(42);
+    expect(prisma.playerEventScore.upsert).not.toHaveBeenCalled();
+    expect(prisma.eventScoreActionLog.create).not.toHaveBeenCalled();
   });
 
   it('rejects double reward claim', async () => {

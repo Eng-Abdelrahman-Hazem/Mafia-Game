@@ -178,3 +178,17 @@ model PlayerEventScore {
   @@unique([liveEventId, playerId])
   @@index([playerId])
 }
+
+model EventScoreActionLog {
+  id             String   @id @default(uuid())
+  liveEventId    String
+  playerId       String
+  actionType     String
+  quantity       Int
+  appliedPoints  Int
+  idempotencyKey String
+  createdAt      DateTime @default(now())
+
+  @@unique([liveEventId, playerId, idempotencyKey])
+  @@index([playerId, createdAt])
+}

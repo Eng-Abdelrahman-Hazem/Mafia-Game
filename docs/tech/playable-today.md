@@ -83,7 +83,7 @@ Add score into an event:
 curl -s -X POST http://localhost:3000/events/<eventId>/score \
   -H "Authorization: Bearer <accessToken>" \
   -H 'Content-Type: application/json' \
-  -d '{"actionType":"crime_complete","quantity":2}'
+  -d '{"actionType":"crime_complete","quantity":2,"idempotencyKey":"req-001"}'
 ```
 
 Claim event reward:

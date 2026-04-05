@@ -69,29 +69,98 @@ export class EventsService {
 
     const quantity = input.quantity ?? 1;
     const delta = basePoints * quantity;
+    const idempotencyKey = input.idempotencyKey?.trim();
 
-    const score = await this.prisma.playerEventScore.upsert({
-      where: {
-        liveEventId_playerId: {
+    if (!idempotencyKey) {
+      const score = await this.prisma.playerEventScore.upsert({
+        where: {
+          liveEventId_playerId: {
+            liveEventId: eventId,
+            playerId
+          }
+        },
+        update: {
+          points: { increment: delta }
+        },
+        create: {
           liveEventId: eventId,
-          playerId
+          playerId,
+          points: delta
         }
-      },
-      update: {
-        points: { increment: delta }
-      },
-      create: {
-        liveEventId: eventId,
-        playerId,
-        points: delta
-      }
-    });
+      });
 
-    return {
-      eventId,
-      delta,
-      points: score.points
-    };
+      return {
+        eventId,
+        delta,
+        points: score.points,
+        replayed: false
+      };
+    }
+
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const existingAction = await tx.eventScoreActionLog.findUnique({
+        where: {
+          liveEventId_playerId_idempotencyKey: {
+            liveEventId: eventId,
+            playerId,
+            idempotencyKey
+          }
+        }
+      });
+
+      if (existingAction) {
+        const current = await tx.playerEventScore.findUnique({
+          where: {
+            liveEventId_playerId: {
+              liveEventId: eventId,
+              playerId
+            }
+          }
+        });
+
+        return {
+          eventId,
+          delta: 0,
+          points: current?.points ?? 0,
+          replayed: true
+        };
+      }
+
+      const score = await tx.playerEventScore.upsert({
+        where: {
+          liveEventId_playerId: {
+            liveEventId: eventId,
+            playerId
+          }
+        },
+        update: {
+          points: { increment: delta }
+        },
+        create: {
+          liveEventId: eventId,
+          playerId,
+          points: delta
+        }
+      });
+
+      await tx.eventScoreActionLog.create({
+        data: {
+          liveEventId: eventId,
+          playerId,
+          actionType: input.actionType,
+          quantity,
+          appliedPoints: delta,
+          idempotencyKey
+        }
+      });
+
+      return {
+        eventId,
+        delta,
+        points: score.points,
+        replayed: false
+      };
+    });
   }
 
   async claimEventReward(playerId: string, eventId: string) {
