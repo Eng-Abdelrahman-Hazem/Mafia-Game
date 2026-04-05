@@ -25,6 +25,7 @@
 ## Initial endpoints
 - `GET /health`
 - `POST /auth/guest-login`
+- `POST /auth/bind-email` (Bearer token required)
 - `GET /players/me` (Bearer token required)
 - `PATCH /players/grant-resource` (Admin key required via `x-admin-key`)
 - `GET /missions/templates`
@@ -44,4 +45,4 @@
 ## Next coding slice
 - Add admin dashboard controls for event scheduling and reward tuning.
 - Add offer/pricing config endpoints for no-client-patch monetization tests.
-- Add guest-to-email account binding endpoint and analytics funnel event.
+- Add analytics dashboard query endpoints for retention/churn and email-bind conversion.

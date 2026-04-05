@@ -23,6 +23,14 @@ curl -s -X POST http://localhost:3000/auth/guest-login \
 ```
 Copy `accessToken` from response.
 
+Optional: bind recovery email after login:
+```bash
+curl -s -X POST http://localhost:3000/auth/bind-email \
+  -H "Authorization: Bearer <accessToken>" \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"player@example.com"}'
+```
+
 ## 3) Open home state
 ```bash
 curl -s http://localhost:3000/gameplay/home \

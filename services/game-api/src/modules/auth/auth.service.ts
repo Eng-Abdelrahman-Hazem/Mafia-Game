@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma.service';
-import { GuestLoginDto } from './dto';
+import { BindEmailDto, GuestLoginDto } from './dto';
 import { AuthTokenService } from '../../common/auth-token.service';
 
 @Injectable()
@@ -45,5 +46,49 @@ export class AuthService {
     });
 
     return { player, isNew: true, accessToken: this.authTokenService.issueToken(player.id) };
+  }
+
+  async bindEmail(playerId: string, input: BindEmailDto) {
+    const normalizedEmail = input.email.trim().toLowerCase();
+
+    const existing = await this.prisma.player.findUnique({
+      where: { email: normalizedEmail }
+    });
+
+    if (existing && existing.id !== playerId) {
+      throw new BadRequestException('Email is already bound to another account');
+    }
+
+    const now = new Date();
+    const updated = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const player = await tx.player.update({
+        where: { id: playerId },
+        data: {
+          email: normalizedEmail,
+          emailBoundAt: now
+        },
+        select: {
+          id: true,
+          handle: true,
+          email: true,
+          emailBoundAt: true
+        }
+      });
+
+      await tx.analyticsEvent.create({
+        data: {
+          playerId,
+          eventName: 'auth_email_bound',
+          payload: { method: 'manual_bind', emailDomain: normalizedEmail.split('@')[1] ?? 'unknown' }
+        }
+      });
+
+      return player;
+    });
+
+    return {
+      bound: true,
+      player: updated
+    };
   }
 }

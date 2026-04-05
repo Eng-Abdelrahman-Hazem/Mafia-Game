@@ -39,6 +39,8 @@ model Player {
   updatedAt   DateTime     @updatedAt
   deviceId    String       @unique
   handle      String       @unique
+  email       String?      @unique
+  emailBoundAt DateTime?
   faction     Faction
   powerRating Int          @default(100)
   isBot       Boolean      @default(false)
@@ -203,4 +205,15 @@ model EventLeaderboardSnapshot {
 
   @@index([liveEventId, snapshotAt, rank])
   @@index([playerId, snapshotAt])
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(uuid())
+  playerId  String?
+  eventName String
+  payload   Json?
+  createdAt DateTime @default(now())
+
+  @@index([eventName, createdAt])
+  @@index([playerId, createdAt])
 }
