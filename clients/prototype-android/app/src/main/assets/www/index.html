@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shadow Districts - Playable Prototype</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="hud">
+        <h1>Shadow Districts</h1>
+        <div class="resources">
+          <span>Cash: <strong id="cash">2500</strong></span>
+          <span>Energy: <strong id="energy">40</strong></span>
+          <span>Influence: <strong id="influence">0</strong></span>
+        </div>
+      </header>
+
+      <section class="scene">
+        <canvas id="sceneCanvas" width="360" height="220"></canvas>
+      </section>
+
+      <section class="controls">
+        <button id="crimeBtn">Run Crime Sequence</button>
+        <button id="raidBtn">Run Raid Sequence</button>
+        <button id="resetBtn" class="secondary">Reset</button>
+      </section>
+
+      <section class="feed">
+        <h2>Action Feed</h2>
+        <ul id="feed"></ul>
+      </section>
+    </main>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
