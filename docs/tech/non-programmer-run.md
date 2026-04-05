@@ -158,6 +158,26 @@ docker compose -f infra/docker/docker-compose.yml down
 
 ---
 
+## Optional — Build an Android APK from the prototype
+
+If you want a phone-installable APK now (internal testing):
+
+1. Install **Android Studio**.
+2. Open project folder: `clients/prototype-android`.
+3. Wait for Gradle sync.
+4. Click: **Build > Build Bundle(s) / APK(s) > Build APK(s)**.
+5. Locate generated file:
+   - `clients/prototype-android/app/build/outputs/apk/debug/app-debug.apk`
+6. Copy/install APK on your Android device.
+
+If you update `clients/prototype-web`, re-sync Android assets first:
+
+```bash
+./clients/prototype-android/scripts/sync-web-assets.sh
+```
+
+---
+
 ## Common errors and easy fixes
 
 ### "docker: command not found"
