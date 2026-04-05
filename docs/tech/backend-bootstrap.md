@@ -16,10 +16,36 @@
    - `npm run prisma:migrate`
 5. Start API:
    - `npm run start:dev`
+6. Seed playable content:
+   - `npm run seed:playable`
+7. Build and test:
+   - `npm run build`
+   - `npm run test`
 
 ## Initial endpoints
 - `GET /health`
 - `POST /auth/guest-login`
+- `POST /auth/bind-email` (Bearer token required)
+- `GET /players/me` (Bearer token required)
+- `PATCH /players/grant-resource` (Admin key required via `x-admin-key`)
+- `GET /missions/templates`
+- `POST /missions/start` (Bearer token required)
+- `POST /missions/:runId/claim` (Bearer token required)
+- `GET /gameplay/home` (Bearer token required)
+- `POST /gameplay/crime/instant` (Bearer token required)
+- `GET /pvp/targets` (Bearer token required)
+- `POST /pvp/raid` (Bearer token required)
+- `GET /events/active` (Bearer token required)
+- `POST /events/:eventId/score` (Bearer token required)
+- `POST /events/:eventId/claim` (Bearer token required)
+- `GET /events/:eventId/leaderboard` (Bearer token required)
+- `POST /internal/events/:eventId/snapshot?top=100` (Admin key required via `x-admin-key`)
+- `POST /internal/worker/process-missions?limit=50` (Admin key required via `x-admin-key`)
+
+## Next coding slice
+- Add admin dashboard controls for event scheduling and reward tuning.
+- Add offer/pricing config endpoints for no-client-patch monetization tests.
+- Add analytics dashboard query endpoints for retention/churn and email-bind conversion.
 - `GET /players/:id`
 - `PATCH /players/grant-resource`
 - `GET /missions/templates`

@@ -1,0 +1,6 @@
+node_modules/
+services/game-api/node_modules/
+services/game-api/dist/
+services/game-api/coverage/
+services/game-api/.env
+npm-debug.log*
