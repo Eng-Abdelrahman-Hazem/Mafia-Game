@@ -37,9 +37,11 @@
 - `GET /events/active` (Bearer token required)
 - `POST /events/:eventId/score` (Bearer token required)
 - `POST /events/:eventId/claim` (Bearer token required)
+- `GET /events/:eventId/leaderboard` (Bearer token required)
+- `POST /internal/events/:eventId/snapshot?top=100` (Admin key required via `x-admin-key`)
 - `POST /internal/worker/process-missions?limit=50` (Admin key required via `x-admin-key`)
 
 ## Next coding slice
-- Add event leaderboard snapshots for ranking rewards and season reset.
 - Add admin dashboard controls for event scheduling and reward tuning.
 - Add offer/pricing config endpoints for no-client-patch monetization tests.
+- Add guest-to-email account binding endpoint and analytics funnel event.

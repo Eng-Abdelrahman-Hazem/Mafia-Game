@@ -210,6 +210,48 @@ export class EventsService {
     });
   }
 
+  async getLeaderboard(eventId: string, limit = 20) {
+    const boundedLimit = Math.min(Math.max(limit, 1), 100);
+    const leaderboardRows = await this.prisma.playerEventScore.findMany({
+      where: { liveEventId: eventId },
+      include: { player: { select: { handle: true } } },
+      orderBy: [{ points: 'desc' }, { createdAt: 'asc' }],
+      take: boundedLimit
+    });
+
+    return leaderboardRows.map((row: { playerId: string; points: number; player: { handle: string } }, index: number) => ({
+      rank: index + 1,
+      playerId: row.playerId,
+      handle: row.player.handle,
+      points: row.points
+    }));
+  }
+
+  async snapshotLeaderboard(eventId: string, top = 100) {
+    const boundedTop = Math.min(Math.max(top, 5), 500);
+    const leaderboard = await this.prisma.playerEventScore.findMany({
+      where: { liveEventId: eventId },
+      orderBy: [{ points: 'desc' }, { createdAt: 'asc' }],
+      take: boundedTop
+    });
+
+    const snapshotAt = new Date();
+    await this.prisma.eventLeaderboardSnapshot.createMany({
+      data: leaderboard.map((row: { playerId: string; points: number }, index: number) => ({
+        liveEventId: eventId,
+        playerId: row.playerId,
+        rank: index + 1,
+        points: row.points,
+        snapshotAt
+      }))
+    });
+
+    return {
+      snapshotAt,
+      captured: leaderboard.length
+    };
+  }
+
   private parseRewards(rawRewards: unknown): RewardTier[] {
     if (!Array.isArray(rawRewards)) {
       throw new BadRequestException('Invalid reward configuration');

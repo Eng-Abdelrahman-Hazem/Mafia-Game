@@ -1,8 +1,8 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { PlayerAuthGuard } from '../../common/player-auth.guard';
 import { CurrentPlayerId } from '../../common/current-player.decorator';
-import { AddEventScoreDto } from './dto';
+import { AddEventScoreDto, LeaderboardQueryDto } from './dto';
 
 @Controller('events')
 @UseGuards(PlayerAuthGuard)
@@ -26,5 +26,10 @@ export class EventsController {
   @Post(':eventId/claim')
   async claim(@CurrentPlayerId() playerId: string, @Param('eventId') eventId: string) {
     return this.eventsService.claimEventReward(playerId, eventId);
+  }
+
+  @Get(':eventId/leaderboard')
+  async leaderboard(@Param('eventId') eventId: string, @Query() query: LeaderboardQueryDto) {
+    return this.eventsService.getLeaderboard(eventId, query.limit);
   }
 }

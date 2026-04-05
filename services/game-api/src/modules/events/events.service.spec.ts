@@ -4,8 +4,9 @@ import { EventsService } from './events.service';
 describe('EventsService', () => {
   const prisma = {
     liveEvent: { findMany: jest.fn(), findUnique: jest.fn() },
-    playerEventScore: { upsert: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
+    playerEventScore: { upsert: jest.fn(), findUnique: jest.fn(), update: jest.fn(), findMany: jest.fn() },
     eventScoreActionLog: { findUnique: jest.fn(), create: jest.fn(), count: jest.fn(), aggregate: jest.fn() },
+    eventLeaderboardSnapshot: { createMany: jest.fn() },
     playerResource: { update: jest.fn() },
     $transaction: jest.fn()
   } as any;
@@ -118,5 +119,32 @@ describe('EventsService', () => {
     await expect(
       service.addScore('p1', 'e1', { actionType: 'crime_complete', quantity: 1, idempotencyKey: 'new-req' })
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('returns leaderboard ordered by points desc', async () => {
+    const service = new EventsService(prisma);
+    prisma.playerEventScore.findMany.mockResolvedValue([
+      { playerId: 'p2', points: 300, player: { handle: 'Boss2' } },
+      { playerId: 'p1', points: 250, player: { handle: 'Boss1' } }
+    ]);
+
+    const result = await service.getLeaderboard('e1', 10);
+
+    expect(result[0]).toEqual({ rank: 1, playerId: 'p2', handle: 'Boss2', points: 300 });
+    expect(result[1]).toEqual({ rank: 2, playerId: 'p1', handle: 'Boss1', points: 250 });
+  });
+
+  it('creates leaderboard snapshot rows', async () => {
+    const service = new EventsService(prisma);
+    prisma.playerEventScore.findMany.mockResolvedValue([
+      { playerId: 'p1', points: 250, createdAt: new Date() },
+      { playerId: 'p2', points: 200, createdAt: new Date() }
+    ]);
+    prisma.eventLeaderboardSnapshot.createMany.mockResolvedValue({ count: 2 });
+
+    const result = await service.snapshotLeaderboard('e1', 50);
+
+    expect(result.captured).toBe(2);
+    expect(prisma.eventLeaderboardSnapshot.createMany).toHaveBeenCalled();
   });
 });

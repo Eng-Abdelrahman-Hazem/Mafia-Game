@@ -18,3 +18,19 @@ export class AddEventScoreDto {
   @Matches(/^[a-zA-Z0-9._:-]+$/)
   idempotencyKey?: string;
 }
+
+export class LeaderboardQueryDto {
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit?: number;
+}
+
+export class SnapshotQueryDto {
+  @IsOptional()
+  @IsInt()
+  @Min(5)
+  @Max(500)
+  top?: number;
+}

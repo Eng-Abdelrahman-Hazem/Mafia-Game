@@ -192,3 +192,15 @@ model EventScoreActionLog {
   @@unique([liveEventId, playerId, idempotencyKey])
   @@index([playerId, createdAt])
 }
+
+model EventLeaderboardSnapshot {
+  id         String   @id @default(uuid())
+  liveEventId String
+  playerId   String
+  rank       Int
+  points     Int
+  snapshotAt DateTime @default(now())
+
+  @@index([liveEventId, snapshotAt, rank])
+  @@index([playerId, snapshotAt])
+}

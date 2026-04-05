@@ -92,5 +92,17 @@ curl -s -X POST http://localhost:3000/events/<eventId>/claim \
   -H "Authorization: Bearer <accessToken>"
 ```
 
+Read event leaderboard:
+```bash
+curl -s "http://localhost:3000/events/<eventId>/leaderboard?limit=20" \
+  -H "Authorization: Bearer <accessToken>"
+```
+
+Create admin leaderboard snapshot:
+```bash
+curl -s -X POST "http://localhost:3000/internal/events/<eventId>/snapshot?top=100" \
+  -H "x-admin-key: <ADMIN_API_KEY>"
+```
+
 Note: mission completion/instant crime and successful raids now auto-award event points in active events.
 Event scoring endpoint now enforces per-minute request limits and daily point caps to reduce abuse.
