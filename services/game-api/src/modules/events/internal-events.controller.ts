@@ -17,4 +17,9 @@ export class InternalEventsController {
   async settleRewards(@Param('eventId') eventId: string, @Query() query: SettleRewardsQueryDto) {
     return this.eventsService.settleSnapshotRewards(eventId, query.top);
   }
+
+  @Post(':eventId/rollover')
+  async rollover(@Param('eventId') eventId: string, @Query() query: SettleRewardsQueryDto) {
+    return this.eventsService.runEventSeasonRollover(eventId, query.top);
+  }
 }

@@ -333,6 +333,44 @@ export class EventsService {
     };
   }
 
+  async runEventSeasonRollover(eventId: string, top = 100) {
+    const currentEvent = await this.prisma.liveEvent.findUnique({
+      where: { id: eventId },
+      include: { template: true }
+    });
+
+    if (!currentEvent) {
+      throw new NotFoundException('Live event not found');
+    }
+
+    const snapshot = await this.snapshotLeaderboard(eventId, top);
+    const settlement = await this.settleSnapshotRewards(eventId, top);
+
+    const now = new Date();
+    const nextEvent = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      await tx.liveEvent.update({
+        where: { id: eventId },
+        data: { endsAt: now }
+      });
+
+      return tx.liveEvent.create({
+        data: {
+          templateId: currentEvent.templateId,
+          startsAt: now,
+          endsAt: new Date(now.getTime() + currentEvent.template.durationHours * 60 * 60 * 1000)
+        }
+      });
+    });
+
+    return {
+      rolledOver: true,
+      closedEventId: eventId,
+      nextEventId: nextEvent.id,
+      snapshot,
+      settlement
+    };
+  }
+
   private parseRewards(rawRewards: unknown): RewardTier[] {
     if (!Array.isArray(rawRewards)) {
       throw new BadRequestException('Invalid reward configuration');

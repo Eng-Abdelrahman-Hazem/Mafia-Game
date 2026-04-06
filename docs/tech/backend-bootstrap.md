@@ -41,6 +41,7 @@
 - `GET /events/:eventId/leaderboard` (Bearer token required)
 - `POST /internal/events/:eventId/snapshot?top=100` (Admin key required via `x-admin-key`)
 - `POST /internal/events/:eventId/settle-rewards?top=100` (Admin key required via `x-admin-key`)
+- `POST /internal/events/:eventId/rollover?top=100` (Admin key required via `x-admin-key`)
 - `GET /offers/active` (Bearer token required)
 - `POST /internal/offers/upsert` (Admin key required via `x-admin-key`)
 - `GET /internal/analytics/email-bind-funnel?days=14` (Admin key required via `x-admin-key`)
@@ -49,4 +50,4 @@
 ## Next coding slice
 - Build Unity client shell against `/auth`, `/gameplay/home`, `/missions`, `/pvp`, `/events`, `/offers`.
 - Expand FTUE and quest scripting for the full Phase 3 vertical slice.
-- Add event season rollover automation job (snapshot + settle + close event + open next).
+- Wire scheduled cron/BullMQ trigger to execute event rollover without manual admin calls.

@@ -3,7 +3,7 @@ import { EventsService } from './events.service';
 
 describe('EventsService', () => {
   const prisma = {
-    liveEvent: { findMany: jest.fn(), findUnique: jest.fn() },
+    liveEvent: { findMany: jest.fn(), findUnique: jest.fn(), update: jest.fn(), create: jest.fn() },
     playerEventScore: { upsert: jest.fn(), findUnique: jest.fn(), update: jest.fn(), findMany: jest.fn() },
     eventScoreActionLog: { findUnique: jest.fn(), create: jest.fn(), count: jest.fn(), aggregate: jest.fn() },
     eventLeaderboardSnapshot: { createMany: jest.fn(), findFirst: jest.fn(), findMany: jest.fn() },
@@ -18,6 +18,7 @@ describe('EventsService', () => {
     prisma.eventScoreActionLog.aggregate.mockResolvedValue({ _sum: { appliedPoints: 0 } });
     prisma.$transaction.mockImplementation(async (fn: any) =>
       fn({
+        liveEvent: prisma.liveEvent,
         playerEventScore: prisma.playerEventScore,
         eventScoreActionLog: prisma.eventScoreActionLog,
         eventRewardPayout: prisma.eventRewardPayout,
@@ -166,5 +167,30 @@ describe('EventsService', () => {
     expect(result.paid).toBe(2);
     expect(prisma.eventRewardPayout.create).toHaveBeenCalledTimes(2);
     expect(prisma.playerResource.update).toHaveBeenCalledTimes(2);
+  });
+
+  it('rolls over event season by snapshotting, settling, and creating next event', async () => {
+    const service = new EventsService(prisma);
+    const currentSnapshot = new Date('2026-01-01T00:00:00.000Z');
+    prisma.liveEvent.findUnique.mockResolvedValue({
+      id: 'e1',
+      templateId: 't1',
+      template: { durationHours: 24 }
+    });
+    prisma.playerEventScore.findMany.mockResolvedValue([
+      { playerId: 'p1', points: 500, createdAt: new Date(), player: { handle: 'Boss1' } }
+    ]);
+    prisma.eventLeaderboardSnapshot.createMany.mockResolvedValue({ count: 1 });
+    prisma.eventLeaderboardSnapshot.findFirst.mockResolvedValue({ snapshotAt: currentSnapshot });
+    prisma.eventLeaderboardSnapshot.findMany.mockResolvedValue([{ playerId: 'p1', rank: 1, points: 500 }]);
+    prisma.eventRewardPayout.findUnique.mockResolvedValue(null);
+    prisma.liveEvent.create.mockResolvedValue({ id: 'next-event' });
+
+    const result = await service.runEventSeasonRollover('e1', 100);
+
+    expect(result.rolledOver).toBe(true);
+    expect(result.nextEventId).toBe('next-event');
+    expect(prisma.liveEvent.update).toHaveBeenCalled();
+    expect(prisma.liveEvent.create).toHaveBeenCalled();
   });
 });

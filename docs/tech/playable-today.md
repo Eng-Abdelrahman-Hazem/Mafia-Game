@@ -118,6 +118,12 @@ curl -s -X POST "http://localhost:3000/internal/events/<eventId>/settle-rewards?
   -H "x-admin-key: <ADMIN_API_KEY>"
 ```
 
+Run full event season rollover (snapshot + settle + close + reopen):
+```bash
+curl -s -X POST "http://localhost:3000/internal/events/<eventId>/rollover?top=100" \
+  -H "x-admin-key: <ADMIN_API_KEY>"
+```
+
 Read active offers (server-driven pricing):
 ```bash
 curl -s "http://localhost:3000/offers/active" \
