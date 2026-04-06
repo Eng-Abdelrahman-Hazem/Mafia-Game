@@ -1,0 +1,142 @@
+# Playable Today (API Loop)
+
+This gives a first playable semblance today using API endpoints.
+If you are non-technical, use `docs/tech/non-programmer-run.md` first.
+
+## 1) Boot services
+```bash
+cp services/game-api/.env.example services/game-api/.env
+docker compose -f infra/docker/docker-compose.yml up -d postgres redis
+cd services/game-api
+npm install
+npm run prisma:generate
+npm run prisma:migrate
+npm run seed:playable
+npm run start:dev
+```
+
+## 2) Login (guest)
+```bash
+curl -s -X POST http://localhost:3000/auth/guest-login \
+  -H 'Content-Type: application/json' \
+  -d '{"deviceId":"my-test-device-001","preferredHandle":"BossTest"}'
+```
+Copy `accessToken` from response.
+
+Optional: bind recovery email after login:
+```bash
+curl -s -X POST http://localhost:3000/auth/bind-email \
+  -H "Authorization: Bearer <accessToken>" \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"player@example.com"}'
+```
+
+## 3) Open home state
+```bash
+curl -s http://localhost:3000/gameplay/home \
+  -H "Authorization: Bearer <accessToken>"
+```
+
+## 4) Run an instant crime
+Use a `missionTemplateId` from `/gameplay/home`:
+```bash
+curl -s -X POST http://localhost:3000/gameplay/crime/instant \
+  -H "Authorization: Bearer <accessToken>" \
+  -H 'Content-Type: application/json' \
+  -d '{"missionTemplateId":"<id-from-home>"}'
+```
+
+## 5) Find PvP targets and raid
+```bash
+curl -s http://localhost:3000/pvp/targets \
+  -H "Authorization: Bearer <accessToken>"
+```
+Use a `defenderId` from targets:
+```bash
+curl -s -X POST http://localhost:3000/pvp/raid \
+  -H "Authorization: Bearer <accessToken>" \
+  -H 'Content-Type: application/json' \
+  -d '{"defenderId":"<target-id>"}'
+```
+
+This loop (login -> crime -> raid -> home refresh) is the first playable vertical behavior.
+
+## 6) Process finished mission payouts (worker simulation)
+When timed missions are due, trigger worker processing:
+```bash
+curl -s -X POST 'http://localhost:3000/internal/worker/process-missions?limit=50' \
+  -H 'x-admin-key: <ADMIN_API_KEY>'
+```
+
+## 7) Visual action-sequence prototype (temporary graphics)
+```bash
+cd clients/prototype-web
+python3 -m http.server 8080
+```
+Open `http://localhost:8080` and use:
+- **Run Crime Sequence**
+- **Run Raid Sequence**
+
+This gives immediate feedback on sequence pacing and visual feel while Unity implementation is in progress.
+
+## 8) Live event loop (new)
+List active events:
+```bash
+curl -s http://localhost:3000/events/active \
+  -H "Authorization: Bearer <accessToken>"
+```
+
+Add score into an event:
+```bash
+curl -s -X POST http://localhost:3000/events/<eventId>/score \
+  -H "Authorization: Bearer <accessToken>" \
+  -H 'Content-Type: application/json' \
+  -d '{"actionType":"crime_complete","quantity":2,"idempotencyKey":"req-001"}'
+```
+
+Claim event reward:
+```bash
+curl -s -X POST http://localhost:3000/events/<eventId>/claim \
+  -H "Authorization: Bearer <accessToken>"
+```
+
+Read event leaderboard:
+```bash
+curl -s "http://localhost:3000/events/<eventId>/leaderboard?limit=20" \
+  -H "Authorization: Bearer <accessToken>"
+```
+
+Create admin leaderboard snapshot:
+```bash
+curl -s -X POST "http://localhost:3000/internal/events/<eventId>/snapshot?top=100" \
+  -H "x-admin-key: <ADMIN_API_KEY>"
+```
+
+Settle ranking rewards from latest snapshot (admin):
+```bash
+curl -s -X POST "http://localhost:3000/internal/events/<eventId>/settle-rewards?top=100" \
+  -H "x-admin-key: <ADMIN_API_KEY>"
+```
+
+Read active offers (server-driven pricing):
+```bash
+curl -s "http://localhost:3000/offers/active" \
+  -H "Authorization: Bearer <accessToken>"
+```
+
+Upsert an offer config (admin):
+```bash
+curl -s -X POST "http://localhost:3000/internal/offers/upsert" \
+  -H "x-admin-key: <ADMIN_API_KEY>" \
+  -H 'Content-Type: application/json' \
+  -d '{\"key\":\"starter_pack\",\"title\":\"Starter Pack\",\"priceUsd\":1.99,\"gemAmount\":250,\"bonusPct\":20,\"startsAt\":\"2026-01-01T00:00:00.000Z\",\"endsAt\":\"2027-01-01T00:00:00.000Z\",\"isActive\":true}'
+```
+
+Read email-bind conversion funnel (admin):
+```bash
+curl -s "http://localhost:3000/internal/analytics/email-bind-funnel?days=14" \
+  -H "x-admin-key: <ADMIN_API_KEY>"
+```
+
+Note: mission completion/instant crime and successful raids now auto-award event points in active events.
+Event scoring endpoint now enforces per-minute request limits and daily point caps to reduce abuse.

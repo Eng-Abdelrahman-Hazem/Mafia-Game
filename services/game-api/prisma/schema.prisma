@@ -1,0 +1,249 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Faction {
+  DOCK_SERPENTS
+  VELVET_CIRCUIT
+  IRON_VOW
+}
+
+enum MissionStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum JobStatus {
+  PENDING
+  PROCESSING
+  DONE
+  FAILED
+}
+
+enum LiveEventType {
+  DISTRICT_SKIRMISH
+  CREW_SURGE
+  BLACK_MARKET_RUSH
+  SYNDICATE_DONATION
+}
+
+model Player {
+  id          String       @id @default(uuid())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deviceId    String       @unique
+  handle      String       @unique
+  email       String?      @unique
+  emailBoundAt DateTime?
+  faction     Faction
+  powerRating Int          @default(100)
+  isBot       Boolean      @default(false)
+  resources   PlayerResource?
+  missionRuns MissionRun[]
+  raidsAsAtk  PvPRaidLog[] @relation("raidsAsAttacker")
+  raidsAsDef  PvPRaidLog[] @relation("raidsAsDefender")
+  protection  PvPProtectionState?
+  eventScores PlayerEventScore[]
+}
+
+model PlayerResource {
+  playerId    String @id
+  cash        Int    @default(0)
+  gems        Int    @default(0)
+  energy      Int    @default(0)
+  influence   Int    @default(0)
+  contraband  Int    @default(0)
+  loyalty     Int    @default(100)
+  heat        Int    @default(0)
+  player      Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+}
+
+model MissionTemplate {
+  id              String       @id @default(uuid())
+  key             String       @unique
+  title            String
+  energyCost      Int
+  durationSec     Int
+  cashReward      Int
+  influenceReward Int
+  isActive        Boolean      @default(true)
+  runs            MissionRun[]
+}
+
+model MissionRun {
+  id                String        @id @default(uuid())
+  playerId          String
+  missionTemplateId String
+  status            MissionStatus
+  startedAt         DateTime
+  endsAt            DateTime
+  createdAt         DateTime      @default(now())
+
+  player            Player         @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  missionTemplate   MissionTemplate @relation(fields: [missionTemplateId], references: [id])
+  payoutJobs        MissionPayoutJob[]
+}
+
+model PvPRaidLog {
+  id            String   @id @default(uuid())
+  createdAt     DateTime @default(now())
+  attackerId    String
+  defenderId    String
+  attackerPower Int
+  defenderPower Int
+  won           Boolean
+  stolenCash    Int
+
+  attacker Player @relation("raidsAsAttacker", fields: [attackerId], references: [id], onDelete: Cascade)
+  defender Player @relation("raidsAsDefender", fields: [defenderId], references: [id], onDelete: Cascade)
+}
+
+model PvPProtectionState {
+  playerId           String   @id
+  shieldUntil        DateTime?
+  lastRaidedAt       DateTime?
+  raidsAgainstWindow Int      @default(0)
+  updatedAt          DateTime @updatedAt
+  player             Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+}
+
+model AdminAuditLog {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  actor     String
+  action    String
+  playerId  String
+  payload   Json?
+}
+
+model MissionPayoutJob {
+  id           String    @id @default(uuid())
+  missionRunId String
+  playerId     String
+  dueAt        DateTime
+  status       JobStatus @default(PENDING)
+  attempts     Int       @default(0)
+  lastError    String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  missionRun MissionRun @relation(fields: [missionRunId], references: [id], onDelete: Cascade)
+
+  @@index([status, dueAt])
+  @@index([playerId])
+}
+
+model EventTemplate {
+  id             String        @id @default(uuid())
+  key            String        @unique
+  title          String
+  type           LiveEventType
+  durationHours  Int
+  scoringRule    Json
+  rewards        Json
+  isActive       Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  liveEvents     LiveEvent[]
+}
+
+model LiveEvent {
+  id              String          @id @default(uuid())
+  templateId      String
+  startsAt        DateTime
+  endsAt          DateTime
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  template        EventTemplate   @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  playerScores    PlayerEventScore[]
+
+  @@index([startsAt, endsAt])
+}
+
+model PlayerEventScore {
+  id          String    @id @default(uuid())
+  liveEventId String
+  playerId    String
+  points      Int       @default(0)
+  claimedAt   DateTime?
+  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime  @default(now())
+  liveEvent   LiveEvent @relation(fields: [liveEventId], references: [id], onDelete: Cascade)
+  player      Player    @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([liveEventId, playerId])
+  @@index([playerId])
+}
+
+model EventScoreActionLog {
+  id             String   @id @default(uuid())
+  liveEventId    String
+  playerId       String
+  actionType     String
+  quantity       Int
+  appliedPoints  Int
+  idempotencyKey String
+  createdAt      DateTime @default(now())
+
+  @@unique([liveEventId, playerId, idempotencyKey])
+  @@index([playerId, createdAt])
+}
+
+model EventLeaderboardSnapshot {
+  id         String   @id @default(uuid())
+  liveEventId String
+  playerId   String
+  rank       Int
+  points     Int
+  snapshotAt DateTime @default(now())
+
+  @@index([liveEventId, snapshotAt, rank])
+  @@index([playerId, snapshotAt])
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(uuid())
+  playerId  String?
+  eventName String
+  payload   Json?
+  createdAt DateTime @default(now())
+
+  @@index([eventName, createdAt])
+  @@index([playerId, createdAt])
+}
+
+model OfferConfig {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  title       String
+  priceUsd    Float
+  gemAmount   Int
+  bonusPct    Int      @default(0)
+  startsAt    DateTime
+  endsAt      DateTime
+  isActive    Boolean  @default(true)
+  targeting   Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive, startsAt, endsAt])
+}
+
+model EventRewardPayout {
+  id         String   @id @default(uuid())
+  liveEventId String
+  playerId   String
+  rank       Int
+  points     Int
+  reward     Json
+  createdAt  DateTime @default(now())
+
+  @@unique([liveEventId, playerId])
+  @@index([liveEventId, createdAt])
+}
